@@ -1,34 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import {
+ createBrowserRouter,
+ RouterProvider
+} from 'react-router-dom';
+
+import { 
+  QueryClient,
+  QueryClientProvider
+} from '@tanstack/react-query'
+
+import { loader as countryListLoader } from './loaders/country_list';
+import { loader as countryDetailsLoader} from './loaders/country_details';
+import { Header } from './components/Header';
+import MainBody from './components/MainBody';
+import CountryList from './components/CountryList';
+import CountryDetails from './components/CountryDetails';
+
+const queryClient = new QueryClient();
+
+export type Theme = 'light' | 'dark';
+
+const router = createBrowserRouter([
+  {
+    path: '',
+    element: <CountryList />,
+    loader: countryListLoader(queryClient)
+  },
+  {
+    path: '/:name',
+    element: <CountryDetails />,
+    loader: countryDetailsLoader(queryClient)
+  }
+]);
+
+function syncTheme(): Theme {
+  const value = window.localStorage.getItem('theme');
+  return value !== null ? value as Theme : 'dark';
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [theme, setTheme] = useState<Theme>(syncTheme());
+  
+  useEffect(() => {
+    document.documentElement.classList.add(theme);
+    window.localStorage.setItem('theme', theme);
+
+    return () => document.documentElement.classList.remove(theme);
+  }, [theme]);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      <>
+        <Header theme={theme} setTheme={setTheme}></Header>
+        <MainBody>
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router}></RouterProvider>
+          </QueryClientProvider>
+        </MainBody>
+      </>
   )
 }
 

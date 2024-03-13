@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+data.json
+
 *.md
 disign
 package-lock.json
